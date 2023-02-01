@@ -1,0 +1,14 @@
+ _format_version: "1.1"
+ _transform: true
+
+ services:
+ - name: gist-service
+   url: https://api.github.com
+   routes:
+    - name: gists-route
+      paths:
+       - /gists
+   plugins:
+    - name: ecies-encrypt
+      config:
+        message: geethub
