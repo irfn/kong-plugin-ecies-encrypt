@@ -31,7 +31,7 @@ func New() interface{} {
 	return &Config{}
 }
 
-func (conf Config) Access(kong *pdk.PDK) {
+func (conf Config) Response(kong *pdk.PDK) {
 	b64pk, err := ioutil.ReadFile(conf.PrivateKeyFile)
 	if err != nil {
 		log.Fatalf("no config %s", err)

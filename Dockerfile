@@ -9,14 +9,17 @@ ADD . $APP_HOME
 
 RUN cd $APP_HOME && \
   go mod download && \
-  go build -o ecies-encrypt ecies-encrypt.go
+  go build -o ecies-encrypt ecies-encrypt.go && \
+  go run keys.go
 
 FROM kong:3.1.1-alpine
 
 USER root
+RUN mkdir -p /ecies-encrypt
 COPY --from=builder /ecies-encrypt/ecies-encrypt /usr/local/bin/
-
+COPY --from=builder /ecies-encrypt/ecies.pk.key /ecies-encrypt/
 USER kong
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 8000 8443 8001 8444
 STOPSIGNAL SIGQUIT
