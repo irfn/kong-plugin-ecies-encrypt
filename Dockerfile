@@ -1,4 +1,5 @@
 FROM golang:1.19.5-alpine as builder
+RUN apk add --update alpine-sdk
 
 ENV APP_HOME /ecies-encrypt
 RUN mkdir -p $APP_HOME

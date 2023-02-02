@@ -6,11 +6,13 @@
 package main
 
 import (
-	"fmt"
+	"encoding/base64"
+	"io/ioutil"
 	"log"
 
 	"github.com/Kong/go-pdk"
 	"github.com/Kong/go-pdk/server"
+	ecies "github.com/ecies/go/v2"
 )
 
 func main() {
@@ -21,7 +23,8 @@ var Version = "0.2"
 var Priority = 1
 
 type Config struct {
-	Message string
+	Message        string
+	PrivateKeyFile string `json:"private_key_file"`
 }
 
 func New() interface{} {
@@ -29,14 +32,28 @@ func New() interface{} {
 }
 
 func (conf Config) Access(kong *pdk.PDK) {
-	host, err := kong.Request.GetHeader("host")
+	b64pk, err := ioutil.ReadFile(conf.PrivateKeyFile)
 	if err != nil {
-		log.Printf("Error reading 'host' header: %s", err.Error())
+		log.Fatalf("no config %s", err)
+	}
+	log.Printf(string(b64pk))
+	decodedKey, err := base64.StdEncoding.DecodeString(string(b64pk))
+	if err != nil {
+		log.Fatalf("Bad key configured: %s, %s", b64pk, err.Error())
 	}
 
-	message := conf.Message
-	if message == "" {
-		message = "hello"
+	pk := ecies.NewPrivateKeyFromBytes([]byte(decodedKey))
+	body, err := kong.ServiceResponse.GetRawBody()
+	if err != nil {
+		log.Printf("Error reading response body: %s", err.Error())
 	}
-	kong.Response.SetHeader("x-hello-from-go", fmt.Sprintf("Go says %s to %s", message, host))
+
+	encryptedBody, err := ecies.Encrypt(pk.PublicKey, []byte(body))
+	if err != nil {
+		log.Printf("Error encrypting response body: %s", err.Error())
+	}
+
+	upstreamStatus, _ := kong.ServiceResponse.GetStatus()
+	upstreamHeaders, _ := kong.ServiceResponse.GetHeaders(-1)
+	kong.Response.Exit(upstreamStatus, base64.RawStdEncoding.EncodeToString(encryptedBody), upstreamHeaders)
 }

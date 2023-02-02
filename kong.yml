@@ -12,3 +12,4 @@
     - name: ecies-encrypt
       config:
         message: geethub
+        private_key_file: ecies.pk.key
