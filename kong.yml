@@ -8,6 +8,7 @@
     - name: gists-route
       paths:
        - /gists
+       - /pubkey
    plugins:
     - name: ecies-encrypt
       config:
